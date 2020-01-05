@@ -2,6 +2,7 @@ import urllib.request
 import os
 import argparse
 import errno
+import random
 import pandas as pd
 from tqdm import tqdm
 from multiprocessing.pool import ThreadPool
@@ -18,6 +19,8 @@ argparser.add_argument('-l', '--labelmap',
                        help='path to labelmap (.csv)')
 argparser.add_argument('-i', '--images',
                        help='path to file containing links to images (.csv)')
+argparser.add_argument('-m', '--max',
+                       help='maximum number of images to download')
 
 args = argparser.parse_args()
 
@@ -27,6 +30,7 @@ OUTPUT_DIR = args.dir
 OBJECTS = args.objects
 LABELMAP = args.labelmap
 IMAGES = args.images
+LIMIT = args.max
 
 # make OUTPUT_DIR if not present
 if not os.path.isdir(OUTPUT_DIR):
@@ -77,7 +81,6 @@ def generate_download_list(annotations, labelmap, base_url):
 
     ######################
     url_download_list = []
-    print(df_download.shape)
 
     for idx, row in df_download.iterrows():
         # get name of the image
@@ -89,7 +92,10 @@ def generate_download_list(annotations, labelmap, base_url):
             url = os.path.join(base_url, image_name)
 
             url_download_list.append(url)
-    print(len(url_download_list))
+            
+    # remove multiple entries        
+    url_download_list = list(set(url_download_list))
+    
     return url_download_list
 
 
@@ -134,7 +140,9 @@ def main():
     download_list = generate_download_list(annotations=df_annotations,
                                            labelmap=ooi_labelmap,
                                            base_url=base_url)
-
+    # get selected number of images
+    download_list = random.sample(download_list, LIMIT)
+    
     # download objects of interest
     download_objects_of_interest(download_list)
 
