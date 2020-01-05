@@ -77,6 +77,7 @@ def generate_download_list(annotations, labelmap, base_url):
 
     ######################
     url_download_list = []
+    print(df_download.shape)
 
     for idx, row in df_download.iterrows():
         # get name of the image
@@ -88,7 +89,7 @@ def generate_download_list(annotations, labelmap, base_url):
             url = os.path.join(base_url, image_name)
 
             url_download_list.append(url)
-
+    print(len(url_download_list))
     return url_download_list
 
 
