@@ -30,7 +30,7 @@ OUTPUT_DIR = args.dir
 OBJECTS = args.objects
 LABELMAP = args.labelmap
 IMAGES = args.images
-LIMIT = args.max
+LIMIT = int(args.max)
 
 # make OUTPUT_DIR if not present
 if not os.path.isdir(OUTPUT_DIR):
@@ -141,7 +141,8 @@ def main():
                                            labelmap=ooi_labelmap,
                                            base_url=base_url)
     # get selected number of images
-    download_list = random.sample(download_list, LIMIT)
+    if LIMIT < len(download_list):
+      download_list = random.sample(download_list, LIMIT)
     
     # download objects of interest
     download_objects_of_interest(download_list)
