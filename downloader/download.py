@@ -71,31 +71,27 @@ def generate_download_list(annotations, labelmap, base_url):
     :param base_url: basename of url
     :return: list of urls to download
     '''
-    # create an empty dataframe
-    df_download = pd.DataFrame(columns=['ImageID', 'LabelName'])
+    
+    label_names = labelmap.values()
 
-    # append dataframes to empty df according to conditions
-    for key, value in labelmap.items():
-        # find ImageID's in original annots dataframe corresponding to ooi's codes
-        df_download = df_download.append(annotations.loc[annotations['LabelName'] == value, ['ImageID', 'LabelName']])
+    # find ImageID's in original annots dataframe corresponding to ooi's codes    
+    df_download = annotations[annotations['LabelName'].isin(label_names)]['ImageID'].unique()
 
     ######################
-    url_download_list = []
 
-    for idx, row in df_download.iterrows():
+    url_download_list = []
+    existing_images = os.listdir(OUTPUT_DIR)
+
+    for image_id in df_download:
         # get name of the image
-        image_name = row['ImageID'] + ".jpg"
+        image_name = image_id + ".jpg"
 
         # check if the image exists in directory
-        if not os.path.exists(os.path.join(OUTPUT_DIR, image_name)):
+        if image_name not in existing_images:
             # form url
             url = os.path.join(base_url, image_name)
-
-            url_download_list.append(url)
-            
-    # remove multiple entries        
-    url_download_list = list(set(url_download_list))
-    
+            url_download_list.append(url)   
+        
     return url_download_list
 
 
@@ -140,10 +136,11 @@ def main():
     download_list = generate_download_list(annotations=df_annotations,
                                            labelmap=ooi_labelmap,
                                            base_url=base_url)
+    
     # get selected number of images
     if LIMIT < len(download_list):
-      download_list = random.sample(download_list, LIMIT)
-    
+        download_list = random.sample(download_list, LIMIT)
+
     # download objects of interest
     download_objects_of_interest(download_list)
 
