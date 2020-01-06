@@ -21,6 +21,8 @@ argparser.add_argument('-i', '--images',
                        help='path to file containing links to images (.csv)')
 argparser.add_argument('-m', '--max',
                        help='maximum number of images to download')
+argparser.add_argument('-s', '--notstrict',
+                       help='not strict getting objects')
 
 args = argparser.parse_args()
 
@@ -31,6 +33,7 @@ OBJECTS = args.objects
 LABELMAP = args.labelmap
 IMAGES = args.images
 LIMIT = int(args.max)
+NOT_STRICT = args.notstrict
 
 # make OUTPUT_DIR if not present
 if not os.path.isdir(OUTPUT_DIR):
@@ -53,10 +56,16 @@ def get_ooi_labelmap(labelmap):
                           user-inputted objects
     '''
 
-    object_codes = {}
-    for idx, row in labelmap.iterrows():
-        if any(obj.lower() in row[1].lower() for obj in OBJECTS):
-            object_codes[row[1].lower()] = row[0]
+    # If want not strict class filtering (if 'bicycle' also get 'bicycle wheel')
+    if NOT_STRICT is not None:
+
+        object_codes = {}
+        for idx, row in labelmap.iterrows():
+            if any(obj.lower() in row[1].lower().split(' ') for obj in OBJECTS):
+                object_codes[row[1].lower()] = row[0]
+    else:
+        labelmap['name'] = labelmap['name'].apply(str.lower)
+        object_codes = labelmap.set_index('name').loc[OBJECTS].to_dict()['code']
 
     return object_codes
 
@@ -105,7 +114,7 @@ def fetch_url(url):
 
 def download_objects_of_interest(download_list):
     with Pool(4) as pool:
-        failures = sum(tqdm(pool.imap_unordered(fetch_url, download_list), total=len(download_list)))
+        failures = sum(tqdm(pool.imap_unordered(fetch_url, download_list), total=len(download_list), desc="Download: "))
 
     return failures
 
@@ -116,7 +125,7 @@ def main():
     base_url = os.path.dirname(df_images['image_url'][0])  # used to download the images
 
     # read labelmap
-    df_oid_labelmap = pd.read_csv(LABELMAP)  # open images dataset (oid) labelmap
+    df_oid_labelmap = pd.read_csv(LABELMAP, header = None, names=['code','name'])  # open images dataset (oid) labelmap
     ooi_labelmap = get_ooi_labelmap(df_oid_labelmap)  # objects of interest (ooi) labelmap
 
     # read annotations
