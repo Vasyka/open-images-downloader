@@ -5,7 +5,7 @@ import errno
 import random
 import pandas as pd
 from tqdm import tqdm
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 from time import time as timer
 
 argparser = argparse.ArgumentParser(description='Download specific objects from Open-Images dataset')
@@ -95,27 +95,19 @@ def generate_download_list(annotations, labelmap, base_url):
     return url_download_list
 
 
+def fetch_url(url):
+    try:
+        urllib.request.urlretrieve(url, os.path.join(OUTPUT_DIR, url.split("/")[-1]))
+        return 0
+    except Exception as e:
+        return 1
+
+
 def download_objects_of_interest(download_list):
-    def fetch_url(url):
-        try:
-            urllib.request.urlretrieve(url, os.path.join(OUTPUT_DIR, url.split("/")[-1]))
-            return url, None
-        except Exception as e:
-            return None, e
+    with Pool(4) as pool:
+        failures = sum(tqdm(pool.imap_unordered(fetch_url, download_list), total=len(download_list)))
 
-    start = timer()
-    results = ThreadPool(20).imap_unordered(fetch_url, download_list)
-
-    df_pbar = tqdm(total=len(download_list), position=1, desc="Download %: ")
-
-    for url, error in results:
-        df_pbar.update(1)
-        if error is None:
-            pass  # TODO: find a way to do tqdm.write() with a refresh
-            # print("{} fetched in {}s".format(url, timer() - start), end='\r')
-        else:
-            pass  # TODO: find a way to do tqdm.write() with a refresh
-            # print("error fetching {}: {}".format(url, error), end='\r')
+    return failures
 
 
 def main():
@@ -142,9 +134,9 @@ def main():
         download_list = random.sample(download_list, LIMIT)
 
     # download objects of interest
-    download_objects_of_interest(download_list)
+    failures = download_objects_of_interest(download_list)
 
-    print("\nFinished downloads.")
+    print(f"\nFinished downloads. Couldn't load {failures} images")
 
 
 if __name__ == '__main__':
