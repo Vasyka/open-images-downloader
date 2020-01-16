@@ -24,3 +24,11 @@ python download.py --images={PATH_TO_IMAGE_FILE}.csv --annots={PATH_TO_ANNOTATIO
 # example
 python download.py --images=/home/smr/projects/open-images-downloader/test-images.csv --annots=/home/smr/projects/open-images-downloader/test-annotations-bbox.csv --objects boat buoy --dir=/home/smr/projects/open-images-downloader/test --labelmap=/home/smr/projects/open-images-downloader/class-descriptions-boxable.csv
 ```
+
+Optional params:
+
+```shell
+python download.py ... --max={MAX_IMAGE_NUM} --notstrict={IF_NOT_STRICT_OBJECTS}
+```
+- max - set if want to download only part of dataset. Maximum number of images to download
+- notstrict - set if want to get not strict filtering by names of objects, like if set 'bicycle' also get 'bicycle wheel'
