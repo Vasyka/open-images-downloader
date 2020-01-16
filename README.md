@@ -19,7 +19,7 @@ wget https://requestor-proxy.figure-eight.com/figure_eight_datasets/open-images/
 ```shell
 cd downloader/
 
-python download.py --images={PATH_TO_IMAGE_FILE}.csv --annots={PATH_TO_ANNOTATION_FILE}.csv --objects {SPACE_SEPARATE_OBJECT_NAMES} --dir={OUTPUT_DIR} --labelmap={PATH_TO_LABELMAP}.csv
+python download.py --images={PATH_TO_IMAGE_FILE}.csv --annots={PATH_TO_ANNOTATION_FILE}.csv --objects {SPACE_SEPARATE_OBJECT_NAMES} --dir={OUTPUT_DIR} --labelmap={PATH_TO_LABELMAP}.csv 
 
 # example
 python download.py --images=/home/smr/projects/open-images-downloader/test-images.csv --annots=/home/smr/projects/open-images-downloader/test-annotations-bbox.csv --objects boat buoy --dir=/home/smr/projects/open-images-downloader/test --labelmap=/home/smr/projects/open-images-downloader/class-descriptions-boxable.csv

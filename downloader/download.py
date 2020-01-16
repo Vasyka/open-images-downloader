@@ -23,6 +23,8 @@ argparser.add_argument('-m', '--max',
                        help='maximum number of images to download')
 argparser.add_argument('-s', '--notstrict',
                        help='not strict getting objects')
+argparser.add_argument('-c', '--notoccluded',
+                       help='get not occluded objects')
 
 args = argparser.parse_args()
 
@@ -34,6 +36,7 @@ LABELMAP = args.labelmap
 IMAGES = args.images
 LIMIT = int(args.max)
 NOT_STRICT = args.notstrict
+NOT_OCCLUDED = args.notoccluded
 
 # make OUTPUT_DIR if not present
 if not os.path.isdir(OUTPUT_DIR):
@@ -83,7 +86,9 @@ def generate_download_list(annotations, labelmap, base_url):
     
     label_names = labelmap.values()
 
-    # find ImageID's in original annots dataframe corresponding to ooi's codes    
+    # find ImageID's in original annots dataframe corresponding to ooi's codes
+    if NOT_OCCLUDED:
+        annotations = annotations[annotations['IsOccluded'] == 0]    
     df_download = annotations[annotations['LabelName'].isin(label_names)]['ImageID'].unique()
 
     ######################
