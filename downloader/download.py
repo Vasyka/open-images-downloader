@@ -1,5 +1,6 @@
 import urllib.request
 import os
+import json
 import argparse
 import errno
 import random
@@ -50,6 +51,30 @@ elif not os.path.exists(LABELMAP):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), LABELMAP)
 
 
+def get_nested_categories(hierarchy, object_codes, found = False):
+    '''
+    Get nested categories of chosen objects like 'Person' -> [Boy, Man, Woman, Girl]
+
+    :param hierarchy: dictionary with hierarchy of classes in Open Images dataset 
+    :param object_codes: list of codes of objects to find
+    :param found: default False
+    :return: list of codes of all nested categories 
+    '''
+
+    nested_codes = []
+    for label in hierarchy['Subcategory']:
+        code = label['LabelName']
+        found_next = False
+        if found or (code in object_codes):
+            nested_codes.append(code)
+            found_next = True
+
+        if 'Subcategory' in label.keys():
+            nested_codes.extend(get_nested_categories(label, object_codes, found_next))
+
+    return nested_codes
+
+
 def get_ooi_labelmap(labelmap):
     '''
     Given labelmap of all objects in Open Images dataset, get labelmap of objects of interest
@@ -68,7 +93,13 @@ def get_ooi_labelmap(labelmap):
                 object_codes[row[1].lower()] = row[0]
     else:
         labelmap['name'] = labelmap['name'].apply(str.lower)
-        object_codes = labelmap.set_index('name').loc[OBJECTS].to_dict()['code']
+        object_codes_list = list(labelmap[labelmap.name.isin(OBJECTS)].code)
+        
+        # Get nested categories of selected objects
+        with open('bbox_labels_600_hierarchy.json') as f:
+            codes_hierarchy = json.load(f)
+        nested_codes = get_nested_categories(codes_hierarchy, object_codes_list)
+        object_codes = labelmap[labelmap.code.isin(nested_codes)].set_index('name').to_dict()['code']
 
     return object_codes
 
@@ -88,7 +119,7 @@ def generate_download_list(annotations, labelmap, base_url):
 
     # find ImageID's in original annots dataframe corresponding to ooi's codes
     if NOT_OCCLUDED:
-        annotations = annotations[annotations['IsOccluded'] == 0]    
+        annotations = annotations[(annotations['LabelName'].isin(label_names)) & (annotations['IsOccluded'] == 0)]        
     df_download = annotations[annotations['LabelName'].isin(label_names)]['ImageID'].unique()
 
     ######################
